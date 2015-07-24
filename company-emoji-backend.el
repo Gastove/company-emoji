@@ -22,17 +22,25 @@
 
 (defvar ce/emoji (ce/load-emoji-names))
 
+(defvar ce/prefix-regexp "\\s-:")
+
 (defun ce/generate-candidates (to-match)
   ""
+  (message "Trying to match:")
+  (message to-match)
   (let ((matcher (lambda (s) (string-match-p (regexp-quote to-match) s))))
     (-filter matcher ce/emoji)))
+
+(defun ce/prefix ()
+  (when (looking-back "\\s-:\\w+")
+    (company-grab-symbol-cons ":")))
 
 (defun company-emoji (command &optional arg &rest ignored)
   "COMMAND ARG IGNORED Doc."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'ce/backend))
-    (prefix (company-grab-symbol-cons "^:"))
+    (prefix (ce/prefix))
     (candidates (ce/generate-candidates arg))
     (no-cache t)
     (post-completion (insert ": "))))
