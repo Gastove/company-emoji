@@ -12,19 +12,33 @@
 (require 'company)
 (require 'emoji-cheat-sheet-plus)
 
+(defun ce/load-emoji-names ()
+  ""
+  (if (eq (length emoji-cheat-sheet-plus-image--cache) 0)
+      (emoji-cheat-sheet-plus--create-cache))
+  (-map
+   (lambda (ent) (substring (symbol-name (first ent)) 1 -1))
+   emoji-cheat-sheet-plus-image--cache))
+
+(defvar ce/emoji (ce/load-emoji-names))
+
 (defun ce/generate-candidates (to-match)
   ""
-  (let ((names (-map 'first emoji-cheat-sheet-plus-image--cache))
-        (matcher (lambda (s) (string-match-p (regexp-quote to-match) (symbol-name s)))))
-    (-filter matcher names)))
+  (let ((matcher (lambda (s) (string-match-p (regexp-quote to-match) s))))
+    (-filter matcher ce/emoji)))
 
-(defun ce/backend (command &optional arg &rest ignored)
+(defun company-emoji (command &optional arg &rest ignored)
   "COMMAND ARG IGNORED Doc."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'ce/backend))
-    (prefix (company-grab-symbol-cons ":"))
-    (candidates (ce/generate-candidates arg))))
+    (prefix (company-grab-symbol-cons "^:"))
+    (candidates (ce/generate-candidates arg))
+    (no-cache t)
+    (post-completion (insert ": "))))
+
+;;;#autoload
+(add-to-list 'company-backends 'company-emoji)
 
 (provide 'company-emoji-backend)
 ;;; company-emoji-backend.el ends here
